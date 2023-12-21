@@ -4,9 +4,13 @@ import {
     errorNotification,
     showAdminPages,
     showAdminStatus,
+    showAddButton,
    
   } from "../../utils/utils.js";
   
+  //show Button
+  showAddButton();
+
   //userforadmin
   showAdminPages();
 
@@ -17,8 +21,24 @@ import {
 getDatas();
 
 async function getDatas() {
+  let dataTable = $('#appointmentTable').DataTable();
+
+  if (dataTable) {
+    dataTable.clear().draw();
+  } else {
+    dataTable = $('#appointmentTable').DataTable({
+      autoWidth: false,
+      columnDefs: [
+        {
+          targets: ['_all'],
+          className: 'mdc-data-table__cell',
+        },
+      ],
+    });
+  }
   //if the role is admin
   const isAdmin = localStorage.getItem("role") === "admin";
+  const isCustomer = localStorage.getItem("role") === "customer";
 
   // Choose the appropriate API endpoint based on the user's role
   const apiEndpoint = isAdmin ? "/api/allappointment" : "/api/appointment";
@@ -34,12 +54,14 @@ async function getDatas() {
   if (response.ok) {
     const json = await response.json();
 
+
     // Initialize DataTable
     $('#appointmentTable').DataTable().clear().draw();
 
     json.forEach((element) => {
 
       const status = element.status || "pending";
+      const createdByUserName = element.created_by_user ? element.created_by_user.name : 'Unknown';
 
       // Format the time using toLocaleTimeString
     const startTime = new Date(`2023-01-01 ${element.start_time}`);
@@ -52,6 +74,7 @@ async function getDatas() {
       const container = `
         <tr>
           <td>${element.appointment_no}</td>
+          <td>${createdByUserName}</td>
           <td>${element.area}</td>
           <td>${element.event_name}</td>
           <td>${element.event_date}</td>
@@ -60,8 +83,10 @@ async function getDatas() {
           <td>${status}</td>
           <td>${formattedCreatedDate}</td>
           <td>
-              <a href="#" class="btn-small"  id="btn_edit" data-id="${element.appointment_no}">Edit</a>
+               ${isAdmin ? '' : `<a href="#" class="btn-small"  id="btn_edit" data-id="${element.appointment_no}">Edit</a>`}
               <a href="#" class="btn-small red" id="btn_delete" data-id="${element.appointment_no}">Delete</a>
+              ${isCustomer ? '' : `<a href="#" class="btn-small"  id="btn_accept" data-id="${element.appointment_no}">Accept</a>`}
+              ${isCustomer ? '' : `<a href="#" class="btn-small red"  id="btn_decline" data-id="${element.appointment_no}">Decline</a>`}
             </td>
         </tr>`;
 
@@ -76,6 +101,15 @@ async function getDatas() {
     document.querySelectorAll("#btn_delete").forEach((element) => {
       element.addEventListener("click", deleteAction);
     });
+
+    document.querySelectorAll("#btn_accept").forEach((element) => {
+      element.addEventListener("click", acceptAction);
+    });
+
+    document.querySelectorAll("#btn_decline").forEach((element) => {
+      element.addEventListener("click", declineAction);
+    });
+    
   } else {
     errorNotification("HTTP-Error: " + response.status);
   }
@@ -177,14 +211,17 @@ errorMessage.style.display = "none";
    // close modal
     closeModal();
      
-    // Display the success message
-    const successMessage = document.getElementById("success-message");
-    successMessage.innerText = json.success;
-    successMessage.style.display = "block";
- 
-    // Hide the error message if it was previously displayed
-    const errorMessage = document.getElementById("error-message");
-    errorMessage.style.display = "none";
+   // Display the error message at the top of the form
+   const errorMessage = document.getElementById("error-message-local");
+   errorMessage.innerText = json.error  ;
+   errorMessage.style.display = "block";
+
+   // Hide the success message if it was previously displayed
+   const successMessage = document.getElementById("success-message-local");
+   successMessage.style.display = "none";
+
+     //reload page
+     getDatas();
      
    }
  
@@ -215,32 +252,38 @@ const deleteAction = async (e) => {
 
     // Get response if 200-299 status code
     if (response.ok) {
-      // const json = await response.json();
-      // console.log(json);
+      const json = await response.json();
+      console.log(json);
 
  
-    // Display the success message
-    const successMessage = document.getElementById("success-message");
-    successMessage.innerText = json.success;
-    successMessage.style.display = "block";
- 
-    // Hide the error message if it was previously displayed
-    const errorMessage = document.getElementById("error-message");
-    errorMessage.style.display = "none";
+   // Display the success message
+const successMessage = document.getElementById("success-message-local");
+successMessage.innerText = json.message; // Assuming the success message is stored in the "message" property
+successMessage.style.display = "block";
 
+// Hide the error message if it was previously displayed
+const errorMessage = document.getElementById("error-message-local");
+errorMessage.style.display = "none";
       //remove the data
       document.querySelector(`[data-id="${id}"]`).remove();
+
+         //reload page
+     getDatas();
       
 
     } else {
+
       // Display the error message at the top of the form
-      const errorMessage = document.getElementById("error-message");
-      errorMessage.innerText = json.message;
-      errorMessage.style.display = "block";
- 
-      // Hide the success message if it was previously displayed
-      const successMessage = document.getElementById("success-message");
-      successMessage.style.display = "none";
+   const errorMessage = document.getElementById("error-message-local");
+   errorMessage.innerText = json.error  ;
+   errorMessage.style.display = "block";
+
+   // Hide the success message if it was previously displayed
+   const successMessage = document.getElementById("success-message-local");
+   successMessage.style.display = "none";
+
+     //reload page
+     getDatas();
     }
   }
 };
@@ -252,7 +295,8 @@ const deleteAction = async (e) => {
   showData(id)
 
   document.getElementById("show_modal").click();
- 
+
+
 };
 //to store appointment id
 let for_update_id = "";
@@ -274,18 +318,18 @@ const showData = async (id) => {
     const json = await response.json();
     console.log(json)
 
+    // Check if json.area is defined and has a value
+console.log("Area:", json.area);
     
     //for the appointmen id
     for_update_id = json.appointment_no;
     //get the date by its ID
+
     document.getElementById("area").value = json.area;
     document.getElementById("event_name").value = json.event_name;
-
     document.getElementById("start_time").value = json.start_time;
     document.getElementById("end_time").value = json.end_time;
-
-    document.getElementById("event_date").value = json.event_date;  
-    document.getElementById("status").value = json.status;  
+    document.getElementById("event_date").value = json.event_date;
     document.getElementById("Appointment_title").innerHTML = "Update Appointment";
     //change button to update
     document.querySelector("#appointment_form button[type='submit']").innerHTML = "Update Appointment";
@@ -341,3 +385,117 @@ const showData = async (id) => {
       }
     };
   });
+
+  // Accept Appointment
+const acceptAction = async (e) => {
+  console.log("Accept action triggered");
+  //confirmation
+  if (confirm("Are you sure you want to Accept?")) {
+
+    //get id from data-id attribute within the delete
+    const id = e.target.getAttribute("data-id");
+
+
+      //Fetch Api
+    const response = await fetch ( backendURL + "/api/appointment/" + id + "/accept" ,{
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
+    });
+
+    // Get response if 200-299 status code
+    if (response.ok) {
+      const json = await response.json();
+      // console.log(json);
+
+ 
+   // Display the success message
+const successMessage = document.getElementById("success-message-local");
+successMessage.innerText = json.message; // Assuming the success message is stored in the "message" property
+successMessage.style.display = "block";
+
+// Hide the error message if it was previously displayed
+const errorMessage = document.getElementById("error-message-local");
+errorMessage.style.display = "none";
+  
+
+         //reload page
+     getDatas();
+      
+
+    } else {
+
+      // Display the error message at the top of the form
+   const errorMessage = document.getElementById("error-message-local");
+   errorMessage.innerText = json.error  ;
+   errorMessage.style.display = "block";
+
+   // Hide the success message if it was previously displayed
+   const successMessage = document.getElementById("success-message-local");
+   successMessage.style.display = "none";
+
+     //reload page
+     getDatas();
+    }
+  }
+};
+
+
+
+// Accept Appointment
+const declineAction = async (e) => {
+  console.log("Decline action triggered");
+  //confirmation
+  if (confirm("Are you sure you want to Decline?")) {
+
+    //get id from data-id attribute within the delete
+    const id = e.target.getAttribute("data-id");
+
+
+      //Fetch Api
+    const response = await fetch ( backendURL + "/api/appointment/" + id + "/decline" ,{
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
+    });
+
+    // Get response if 200-299 status code
+    if (response.ok) {
+      const json = await response.json();
+      // console.log(json);
+
+ 
+   // Display the success message
+const successMessage = document.getElementById("success-message-local");
+successMessage.innerText = json.message; // Assuming the success message is stored in the "message" property
+successMessage.style.display = "block";
+
+// Hide the error message if it was previously displayed
+const errorMessage = document.getElementById("error-message-local");
+errorMessage.style.display = "none";
+  
+
+         //reload page
+     getDatas();
+      
+
+    } else {
+
+      // Display the error message at the top of the form
+   const errorMessage = document.getElementById("error-message-local");
+   errorMessage.innerText = json.error  ;
+   errorMessage.style.display = "block";
+
+   // Hide the success message if it was previously displayed
+   const successMessage = document.getElementById("success-message-local");
+   successMessage.style.display = "none";
+
+     //reload page
+     getDatas();
+    }
+  }
+};

@@ -15,6 +15,20 @@ function showAdminPages(){
   }
 }
 
+function showAddButton() {
+  if (localStorage.getItem("role") === "admin") {
+    document.getElementById("btn_show").innerHTML = `
+    <div class="col-sm-6" hidden style="text-align:right;">
+    <a id="show_modal" class="waves-effect waves-light btn modal-trigger" href="#modal1">Add New Appointment</a>
+  </div>`;
+  } else if (localStorage.getItem("role") === "customer") {
+    document.getElementById("btn_show").innerHTML = `
+    <div class="col-sm-6" style="text-align:right;">
+                  <a id="show_modal" class="waves-effect waves-light btn modal-trigger" href="#modal1">Add New Appointment</a>
+                </div>`;
+  }
+}
+
 function showAdminStatus() {
   if (localStorage.getItem("role") === "admin") {
     document.getElementById("nav_admin_status").innerHTML = `
@@ -55,9 +69,9 @@ function successNotification(message, seconds = 0) {
 }
 
 function errorNotification(message, seconds = 0) {
-  document.querySelector("#error-message").classList.remove("d-none");
-  document.querySelector("#error-message").classList.add("d-block");
-  document.querySelector("#error-message").innerHTML = message;
+  document.querySelector("#error-message-local").classList.remove("d-none");
+  document.querySelector("#error-message-local").classList.add("d-block");
+  document.querySelector("#error-message-local").innerHTML = message;
 
   if (seconds != 0) {
     setTimeout(function () {
@@ -67,4 +81,4 @@ function errorNotification(message, seconds = 0) {
   }
 }
 
-export { backendURL, showAdminPages ,showAdminStatus, successNotification, errorNotification };
+export { backendURL, showAdminPages ,showAdminStatus , showAddButton , successNotification, errorNotification };

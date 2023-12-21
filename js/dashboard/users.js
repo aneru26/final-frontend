@@ -13,6 +13,17 @@ import {
 
   getUser();
   async function getUser() {
+
+    let dataTable = $('#userTable').DataTable({
+      autoWidth: false,
+      columnDefs: [
+        {
+          targets: ['_all'],
+          className: 'mdc-data-table__cell',
+        },
+      ],
+    });
+
     // Get user data
     const response = await fetch(backendURL + "/api/user", {
       headers: {
@@ -24,9 +35,9 @@ import {
     if (response.ok) {
       const json = await response.json();
   
-      // Initialize DataTable
-      $('#userTable').DataTable().clear().draw();
-  
+     // Initialize DataTable
+    $('#userTable').DataTable().clear().draw();
+
       json.forEach((element) => {
         const date = element.created_at.substr(0, 10);
         const startTime = new Date(`${date}T${element.start_time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
@@ -44,13 +55,11 @@ import {
             <td>${element.organization}</td>
             <td>${element.email}</td>
             <td>${formattedCreatedDate}</td>
-            <td>
-              <a href="#" class="btn-small"  id="btn_edit" data-id="${element.id}">Edit</a>
-              <a href="#" class="btn-small red" id="btn_delete" data-id="${element.id}">Delete</a>
-            </td>
           </tr>`;
 
-          $('#userTable').DataTable().row.add($(container)).draw();
+         // Change this line to use the correct table id
+$('#userTable').DataTable().row.add($(container)).draw();
+
       });
   
       document.getElementById("get_data").innerHTML = container;
@@ -64,10 +73,6 @@ import {
         element.addEventListener("click", deleteAction);
       });
   
-      // Initialize DataTable
-      $(document).ready(function() {
-        $('#userTable').DataTable();
-      });
     } else {
       errorNotification("HTTP-Error: " + response.status);
     }
