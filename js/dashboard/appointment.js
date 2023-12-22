@@ -45,6 +45,7 @@ async function getDatas() {
   
   //get Appointment
   const response = await fetch(backendURL + apiEndpoint, {
+    method: "GET",
     headers: {
       Accept: "application/json",
       Authorization: "Bearer " + localStorage.getItem("token"),
@@ -54,7 +55,7 @@ async function getDatas() {
   if (response.ok) {
     const json = await response.json();
 
-
+    console.log(json)
     // Initialize DataTable
     $('#appointmentTable').DataTable().clear().draw();
 
