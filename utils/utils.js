@@ -4,7 +4,7 @@ import { setRouter } from "../router/router.js";
 setRouter();
 
 // Backend URL
-const backendURL = "https://611c-103-80-142-206.ngrok-free.app ";
+const backendURL = "https://611c-103-80-142-206.ngrok-free.app";
 
 
 function showAdminPages(){
